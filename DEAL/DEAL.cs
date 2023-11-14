@@ -1,11 +1,5 @@
-﻿using Microsoft.VisualBasic.Logging;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms.VisualStyles;
 
 namespace DEAL
 {
@@ -116,15 +110,15 @@ namespace DEAL
             19 , 13 , 30 , 6  , 22 , 11 , 4  , 25
         };
         /// <summary>
-         /// Начальная перестановка битов шифра DES
-         /// </summary>
-         /// <param name="input">Входной массив битов, которые нужно переставить</param>
+        /// Начальная перестановка битов шифра DES
+        /// </summary>
+        /// <param name="input">Входной массив битов, которые нужно переставить</param>
         private BitArray IP(BitArray input)
         {
             BitArray output = new BitArray(input.Length); //создаем массив битов
-            for (int i=0;i<output.Length;i++) //по циклу перебираем 
-                output[i] = input[IPplacements[i]-1]; //-1 т.к. массивы начинаются с 0. В выходной массив битов помещаем на место элементов, указанных в массиве placements, значения элеvентов input по порядку
-            logString.Append( $"Была произведена первоначальная перестановка текста. Теперь текст имеет следующий вид: {ShowBitArrayInString(output)}" +
+            for (int i = 0; i < output.Length; i++) //по циклу перебираем 
+                output[i] = input[IPplacements[i] - 1]; //-1 т.к. массивы начинаются с 0. В выходной массив битов помещаем на место элементов, указанных в массиве placements, значения элеvентов input по порядку
+            logString.Append($"Была произведена первоначальная перестановка текста. Теперь текст имеет следующий вид: {ShowBitArrayInString(output)}" +
                 Environment.NewLine);
             return output;
         }
@@ -135,15 +129,15 @@ namespace DEAL
         /// <param name="DESkey">Ключ DES, относительно которого будут генерироваться ключи DEAL</param>
         public void DEALGenerateKeys(BitArray key, BitArray DESkey)
         {
-            BitArray k1=new BitArray(64), k2=new BitArray(64); //разбиваем 128-битный ключ на 2 подключа по 64 бита для шифрования DES'ом
-            for (int i=0;i<key.Length;i++) //цикл разбиение 128-битного ключа на 2 64-битных ключа
+            BitArray k1 = new BitArray(64), k2 = new BitArray(64); //разбиваем 128-битный ключ на 2 подключа по 64 бита для шифрования DES'ом
+            for (int i = 0; i < key.Length; i++) //цикл разбиение 128-битного ключа на 2 64-битных ключа
             {
                 if (i < 64) //первая половина ключа
                     k1[i] = key[i];
                 else
                     k2[i - 64] = key[i];
             }
-            BitArray k1Copy, k2Copy, i1,i2,i4,i8;
+            BitArray k1Copy, k2Copy, i1, i2, i4, i8;
             i1 = new BitArray(64); //Инициализируем массив для "Replicant constants" 1 (не знаю, как объяснить)
             i1[0] = true;
             i2 = new BitArray(64); //Инициализируем массив для 2
@@ -155,27 +149,27 @@ namespace DEAL
             k1Copy = Copy(k1); //копируем ключи, т.к. в ходе XOR они могут утеряться
             k2Copy = Copy(k2);
             DEALkeys = new BitArray[6];//инициализируем массив ключей DEAL
-            DEALkeys[0] = DESEncryption(k1,DESkey,false); //Первый ключ DEAL получается путем шифрования первой половины исходного ключа
-            DEALkeys[1] = DESEncryption(k2Copy.Xor(DEALkeys[0]), DESkey,true); //Второй ключ DEAL получается путем шифрования результата XOR второй половины ключа на готовый первый ключ DEAL
+            DEALkeys[0] = DESEncryption(k1, DESkey, false); //Первый ключ DEAL получается путем шифрования первой половины исходного ключа
+            DEALkeys[1] = DESEncryption(k2Copy.Xor(DEALkeys[0]), DESkey, true); //Второй ключ DEAL получается путем шифрования результата XOR второй половины ключа на готовый первый ключ DEAL
             k2Copy = Copy(k2); //Результат XOR записывается в массив битов по умолчанию, нужно копировать каждый раз после XOR
-            DEALkeys[2] = DESEncryption(k1Copy.Xor(i1.Xor(DEALkeys[1])), DESkey,true); //Третий ключ получается путем шифрования XORа первой половины исходного ключа на XOR i-го числа на готовый второй ключ DEAL
+            DEALkeys[2] = DESEncryption(k1Copy.Xor(i1.Xor(DEALkeys[1])), DESkey, true); //Третий ключ получается путем шифрования XORа первой половины исходного ключа на XOR i-го числа на готовый второй ключ DEAL
             k1Copy = Copy(k1);
-            DEALkeys[3] = DESEncryption(k2Copy.Xor(i2.Xor(DEALkeys[2])), DESkey,true);//Четвертый ключ по той же механике, что и 3 - только идет XOR других элементов
+            DEALkeys[3] = DESEncryption(k2Copy.Xor(i2.Xor(DEALkeys[2])), DESkey, true);//Четвертый ключ по той же механике, что и 3 - только идет XOR других элементов
             k2Copy = Copy(k2);
             DEALkeys[4] = DESEncryption(k1Copy.Xor(i4.Xor(DEALkeys[3])), DESkey, true);//Пятый ключ
             k1Copy = Copy(k1);
             DEALkeys[5] = DESEncryption(k2Copy.Xor(i8.Xor(DEALkeys[4])), DESkey, true);//Последний ключ DEAL
-            logString.Append( $"Был получен 128-битный ключ {ShowBitArrayInString(key)}" + 
-                Environment.NewLine + "Он был разбит на 2 подключа по 64-бита каждый:" + 
-                Environment.NewLine + $"1 половина ключа имеет вид:{ShowBitArrayInString(k1)}" + 
-                Environment.NewLine + $"2 половина ключа имеет вид: {ShowBitArrayInString(k2)}" + 
+            logString.Append($"Был получен 128-битный ключ {ShowBitArrayInString(key)}" +
+                Environment.NewLine + "Он был разбит на 2 подключа по 64-бита каждый:" +
+                Environment.NewLine + $"1 половина ключа имеет вид:{ShowBitArrayInString(k1)}" +
+                Environment.NewLine + $"2 половина ключа имеет вид: {ShowBitArrayInString(k2)}" +
                 Environment.NewLine);
-            logString.Append( $"Были сформированы 6 подключей DEAL: 1 путем шифрования DES первой половины исходного ключа, 2 путем шифрования DES результата XOR второй половины исходного ключа на первый ключ DEAL" + 
-                Environment.NewLine + $"1 ключ: {ShowBitArrayInString(DEALkeys[0])}" + 
-                Environment.NewLine + $"2 ключ: {ShowBitArrayInString(DEALkeys[1])}" + 
-                Environment.NewLine + $"3 ключ: {ShowBitArrayInString(DEALkeys[2])}" + 
-                Environment.NewLine + $"4 ключ: {ShowBitArrayInString(DEALkeys[3])}" + 
-                Environment.NewLine + $"5 ключ: {ShowBitArrayInString(DEALkeys[4])}" + 
+            logString.Append($"Были сформированы 6 подключей DEAL: 1 путем шифрования DES первой половины исходного ключа, 2 путем шифрования DES результата XOR второй половины исходного ключа на первый ключ DEAL" +
+                Environment.NewLine + $"1 ключ: {ShowBitArrayInString(DEALkeys[0])}" +
+                Environment.NewLine + $"2 ключ: {ShowBitArrayInString(DEALkeys[1])}" +
+                Environment.NewLine + $"3 ключ: {ShowBitArrayInString(DEALkeys[2])}" +
+                Environment.NewLine + $"4 ключ: {ShowBitArrayInString(DEALkeys[3])}" +
+                Environment.NewLine + $"5 ключ: {ShowBitArrayInString(DEALkeys[4])}" +
                 Environment.NewLine + $"6 ключ: {ShowBitArrayInString(DEALkeys[5])}");
         }
         /// <summary>
@@ -185,46 +179,46 @@ namespace DEAL
         public BitArray[] DEALEncrypt(BitArray inputText)
         {
             BitArray[] result = new BitArray[inputText.Length / 128];
-            BitArray[,] blocks = new BitArray[inputText.Length / 128,2]; //инициализируем блоки текста по 128 бит
+            BitArray[,] blocks = new BitArray[inputText.Length / 128, 2]; //инициализируем блоки текста по 128 бит
             string leftBlock, rightBlock;
             BitArray oldL; //Массив битов для хранения левой части блока
-            logString.Append( $"На зашифрование поступил блок, длиной {inputText.Length}. Он был поделен на {inputText.Length / 2} блоков по 128 бит для дальнейшего шифрования" + 
+            logString.Append($"На зашифрование поступил блок, длиной {inputText.Length}. Он был поделен на {inputText.Length / 2} блоков по 128 бит для дальнейшего шифрования" +
                 Environment.NewLine);
-            for (int i=0;i<blocks.GetLength(0); i++)
+            for (int i = 0; i < blocks.GetLength(0); i++)
             {
                 //В цикле инициализируем 2 блока, равные половине длины блока шифртекста
-                blocks[i, 0] = new BitArray(64); 
+                blocks[i, 0] = new BitArray(64);
                 blocks[i, 1] = new BitArray(64);
-                for (int j=0;j<128;j++) //помещаем в поделенные блоки информацию из основного блока
+                for (int j = 0; j < 128; j++) //помещаем в поделенные блоки информацию из основного блока
                 {
                     if (j < 64)
                         blocks[i, 0][j] = inputText[j + (128 * i)]; //каждые 64 блока текста + порядковый номер
                     else
-                        blocks[i, 1][j-64] = inputText[j + (128 * i)];
+                        blocks[i, 1][j - 64] = inputText[j + (128 * i)];
                 }
-                for (int j=0;j<6;j++) //Цикл шифрования
+                for (int j = 0; j < 6; j++) //Цикл шифрования
                 {
                     oldL = Copy(blocks[i, 0]); //копируем левый блок
-                    logString.Append( $"Проводится операция шифрования E (XOR) - левый блок половины исходного ключа на ключ DEAL под номером {j + 1}" + 
-                        Environment.NewLine + $"Текущее значение левого блока: {ShowBitArrayInString(blocks[i, 0])}" + 
-                        Environment.NewLine + $"Текущее значение ключа DEAL: {ShowBitArrayInString(DEALkeys[j])}" + 
+                    logString.Append($"Проводится операция шифрования E (XOR) - левый блок половины исходного ключа на ключ DEAL под номером {j + 1}" +
+                        Environment.NewLine + $"Текущее значение левого блока: {ShowBitArrayInString(blocks[i, 0])}" +
+                        Environment.NewLine + $"Текущее значение ключа DEAL: {ShowBitArrayInString(DEALkeys[j])}" +
                         Environment.NewLine);
-                    blocks[i, 0] = DESEncryption(blocks[i, 0], DEALkeys[j],false);//проводим шифрование E - шифрование левого 64-битного блока ключом DEAL при помощи функции DES
-                    logString.Append( $"Результат XOR левого блока на {j + 1}ключ DEAL: {ShowBitArrayInString(blocks[i, 0])}" + 
+                    blocks[i, 0] = DESEncryption(blocks[i, 0], DEALkeys[j], false);//проводим шифрование E - шифрование левого 64-битного блока ключом DEAL при помощи функции DES
+                    logString.Append($"Результат XOR левого блока на {j + 1}ключ DEAL: {ShowBitArrayInString(blocks[i, 0])}" +
                         Environment.NewLine);
-                    logString.Append( $"Сейчас будет проведена операция XOR полученного значение левого блока на значение правого блока. Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" + 
+                    logString.Append($"Сейчас будет проведена операция XOR полученного значение левого блока на значение правого блока. Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" +
                         Environment.NewLine);
                     blocks[i, 0].Xor(blocks[i, 1]);//Затем финальный XOR - зашифрованный левый блок XORится на правый блок
                     blocks[i, 1] = oldL;
-                    logString.Append( $"Результат {j + 1}-го раунда шифрования:" + 
-                        Environment.NewLine + $"Левый блок имеет вид: {ShowBitArrayInString(blocks[i, 0])}" + 
-                        Environment.NewLine + $"Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" + 
+                    logString.Append($"Результат {j + 1}-го раунда шифрования:" +
+                        Environment.NewLine + $"Левый блок имеет вид: {ShowBitArrayInString(blocks[i, 0])}" +
+                        Environment.NewLine + $"Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" +
                         Environment.NewLine);
                 }
                 leftBlock = ShowBitArrayInString(blocks[i, 0]);
                 rightBlock = ShowBitArrayInString(blocks[i, 1]);
-                result[i] = ShowStringInBitArray(leftBlock+rightBlock);
-                logString.Append( $"Зашифрованный {i + 1} блок имеет вид: {ShowBitArrayInString(result[i])}");
+                result[i] = ShowStringInBitArray(leftBlock + rightBlock);
+                logString.Append($"Зашифрованный {i + 1} блок имеет вид: {ShowBitArrayInString(result[i])}");
             }
             return result;
         }
@@ -234,7 +228,7 @@ namespace DEAL
             BitArray[,] blocks = new BitArray[inputText.Length / 128, 2]; //инициализируем блоки текста по 128 бит
             string leftBlock, rightBlock;
             BitArray oldR;//Массив битов для хранения правой части блока
-            logString.Append( $"На дешифрование поступил блок, длиной {inputText.Length}. Он был поделен на {inputText.Length / 2} блоков по 128 бит для дальнейшего шифрования" + 
+            logString.Append($"На дешифрование поступил блок, длиной {inputText.Length}. Он был поделен на {inputText.Length / 2} блоков по 128 бит для дальнейшего шифрования" +
                 Environment.NewLine);
             for (int i = 0; i < blocks.GetLength(0); i++)
             {
@@ -243,33 +237,33 @@ namespace DEAL
                 blocks[i, 1] = new BitArray(64);
                 for (int j = 0; j < 128; j++) //помещаем в поделенные блоки информацию из основного блока
                 {
-                    if (j<64)
-                    blocks[i, 0][j] = inputText[j+(128*i)]; //каждые 64 блока текста + порядковый номер и сдвиг на 128 элементов относительно того, какого размера пришел изначальный текст
+                    if (j < 64)
+                        blocks[i, 0][j] = inputText[j + (128 * i)]; //каждые 64 блока текста + порядковый номер и сдвиг на 128 элементов относительно того, какого размера пришел изначальный текст
                     else
-                    blocks[i, 1][j-64] = inputText[j+(128*i)];
+                        blocks[i, 1][j - 64] = inputText[j + (128 * i)];
                 }
                 for (int j = 5; j > -1; j--) //Цикл расшифровки
                 {
                     oldR = Copy(blocks[i, 1]); //копируем правый блок
-                    logString.Append( $"Проводится операция шифрования E (XOR) - левый блок половины исходного ключа на ключ DEAL под номером {j + 1}" + 
-                        Environment.NewLine + $"Текущее значение левого блока: {ShowBitArrayInString(blocks[i, 0])}" + 
-                        Environment.NewLine + $"Текущее значение ключа DEAL: {ShowBitArrayInString(DEALkeys[j])}" + 
+                    logString.Append($"Проводится операция шифрования E (XOR) - левый блок половины исходного ключа на ключ DEAL под номером {j + 1}" +
+                        Environment.NewLine + $"Текущее значение левого блока: {ShowBitArrayInString(blocks[i, 0])}" +
+                        Environment.NewLine + $"Текущее значение ключа DEAL: {ShowBitArrayInString(DEALkeys[j])}" +
                         Environment.NewLine);
-                    blocks[i, 1] = DESEncryption(blocks[i, 1], DEALkeys[j],false);//проводим дешифрование E - дешифрование левого 64-битного блока ключом DEAL при помощи функции DES
+                    blocks[i, 1] = DESEncryption(blocks[i, 1], DEALkeys[j], false);//проводим дешифрование E - дешифрование левого 64-битного блока ключом DEAL при помощи функции DES
                     blocks[i, 1].Xor(blocks[i, 0]);//Затем финальный XOR - зашифрованный правый блок XORится на левый блок
                                                    ////logString.Append( $"Результат XOR левого блока на {j + 1}ключ DEAL: {ShowBitArrayInString(blocks[i, 0])}" + Environment.NewLine;
                                                    ////logString.Append( $"Сейчас будет проведена операция XOR полученного значение левого блока на значение правого блока. Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" + Environment.NewLine;
 
                     blocks[i, 0] = oldR;
-                    logString.Append( $"Результат {j + 1}-го раунда шифрования:" + 
-                        Environment.NewLine + $"Левый блок имеет вид: {ShowBitArrayInString(blocks[i, 0])}" + 
-                        Environment.NewLine + $"Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" + 
+                    logString.Append($"Результат {j + 1}-го раунда шифрования:" +
+                        Environment.NewLine + $"Левый блок имеет вид: {ShowBitArrayInString(blocks[i, 0])}" +
+                        Environment.NewLine + $"Правый блок имеет вид: {ShowBitArrayInString(blocks[i, 1])}" +
                         Environment.NewLine);
                 }
                 leftBlock = ShowBitArrayInString(blocks[i, 0]);
                 rightBlock = ShowBitArrayInString(blocks[i, 1]);
                 result[i] = ShowStringInBitArray(leftBlock + rightBlock);
-                logString.Append( $"Расшифрованный {i + 1} блок имеет вид: {ShowBitArrayInString(result[i])}");
+                logString.Append($"Расшифрованный {i + 1} блок имеет вид: {ShowBitArrayInString(result[i])}");
             }
             return result;
         }
@@ -282,8 +276,8 @@ namespace DEAL
         {
             BitArray output = new BitArray(input.Length); //создаем массив битов
             for (int i = 0; i < output.Length; i++) //по циклу перебираем 
-                output[i] = input[reverseIPplacements[i]-1]; //в выходной массив битов помещаем на место элементов, указанных в массиве reverseIPplacements, значения элеvентов input по порядку
-            logString.Append( $"Была произведена конечная перестановка текста. Теперь текст имеет следующий вид: {ShowBitArrayInString(output)}" + 
+                output[i] = input[reverseIPplacements[i] - 1]; //в выходной массив битов помещаем на место элементов, указанных в массиве reverseIPplacements, значения элеvентов input по порядку
+            logString.Append($"Была произведена конечная перестановка текста. Теперь текст имеет следующий вид: {ShowBitArrayInString(output)}" +
                 Environment.NewLine);
             return output;
         }
@@ -291,44 +285,44 @@ namespace DEAL
         /// Функция шифрования DES
         /// </summary>
         /// <param name="input">Входной массив битов 64-битного блока</param>
-        private BitArray DESEncryption(BitArray input, BitArray input_key,bool same_key)
+        private BitArray DESEncryption(BitArray input, BitArray input_key, bool same_key)
         {
-            logString.Append( $"На шифрование пришел блок, который имеет вид: {ShowBitArrayInString(input)}" + 
+            logString.Append($"На шифрование пришел блок, который имеет вид: {ShowBitArrayInString(input)}" +
                 Environment.NewLine);
             input = IP(input);//производим начальную перестановку
-            logString.Append( $"Произведена первоначальная перестановка исходного текста по IP. Перестановленный текст выглядит так: {ShowBitArrayInString(input)}" +
+            logString.Append($"Произведена первоначальная перестановка исходного текста по IP. Перестановленный текст выглядит так: {ShowBitArrayInString(input)}" +
                 Environment.NewLine);
             BitArray L = new BitArray(input.Length / 2); //инициализируем левый блок текста
             BitArray R = new BitArray(input.Length / 2); //инициализируем правый блок текста
-            for (int i=0;i<input.Length/2;i++) //в цикле распределяем текст на 2 блока. Первые 32 бита - в левый блок, оставшиеся 32 бита в правый блок
+            for (int i = 0; i < input.Length / 2; i++) //в цикле распределяем текст на 2 блока. Первые 32 бита - в левый блок, оставшиеся 32 бита в правый блок
             {
                 L[i] = input[i];
             }
-            for (int i=32;i<input.Length;i++)
+            for (int i = 32; i < input.Length; i++)
             {
-                R[i-32] = input[i];
+                R[i - 32] = input[i];
             }
             BitArray oldL;
             if (same_key == false) //если используется тот же ключ (например, при генерации ключей для DEAL)
                 GenerateKeysForDes(input_key); //генерируем 16 раундовых ключей
-            for (int i=0;i<16;i++) //16 раундов шифрования DES
+            for (int i = 0; i < 16; i++) //16 раундов шифрования DES
             {
-                logString.Append( $"Начинается {i + 1}-й раунд шифрования DES. Блок L имеет вид {ShowBitArrayInString(L)}" + 
-                    Environment.NewLine + $"Блок R имеет вид {ShowBitArrayInString(R)}" + 
+                logString.Append($"Начинается {i + 1}-й раунд шифрования DES. Блок L имеет вид {ShowBitArrayInString(L)}" +
+                    Environment.NewLine + $"Блок R имеет вид {ShowBitArrayInString(R)}" +
                     Environment.NewLine);
                 oldL = Copy(L); //запоминаем старый L
                 L = Copy(R); //Новый L - старый R
                 R = oldL.Xor(FeistelFunction(R, DESkeys[i])); //новый R это результат XOR старого L на функцию Фейстеля
-                logString.Append( $"Произведена замена левого блока на правый. Блок L получил значения R и теперь имеет вид {ShowBitArrayInString(L)}" + 
+                logString.Append($"Произведена замена левого блока на правый. Блок L получил значения R и теперь имеет вид {ShowBitArrayInString(L)}" +
                     Environment.NewLine + $"Блок R получил результат операции XOR на предыдущий массив значений блока L {ShowBitArrayInString(R)}" +
                     Environment.NewLine);
             }
-            string resultL,resultR,result; //создаем строки, хранящие финальное содержимое работы функций
+            string resultL, resultR, result; //создаем строки, хранящие финальное содержимое работы функций
             resultL = ShowBitArrayInString(L);
             resultR = ShowBitArrayInString(R);
             result = resultL + resultR;
-            logString.Append( $"Конечные блоки шифрования L и R имеют вид: +" +
-                Environment.NewLine + $"L = {resultL}" + 
+            logString.Append($"Конечные блоки шифрования L и R имеют вид: +" +
+                Environment.NewLine + $"L = {resultL}" +
                 Environment.NewLine + $"R = {resultR}" +
                 Environment.NewLine + $"Соединяем левый блок с правым и получаем результирующий блок: {result}" +
                 Environment.NewLine + "Начинается конечная перестановка IP^-1" +
@@ -343,10 +337,10 @@ namespace DEAL
         /// <returns>Дешифрованный 64-битный блок</returns>
         private BitArray DESDecryption(BitArray input, BitArray input_key)
         {
-            logString.Append( $"На дешифрование пришел блок, который имеет вид: {ShowBitArrayInString(input)}" + 
+            logString.Append($"На дешифрование пришел блок, который имеет вид: {ShowBitArrayInString(input)}" +
                 Environment.NewLine);
             input = IP(input);//производим начальную перестановку
-            logString.Append( $"Произведена первоначальная перестановка исходного текста по IP. Перестановленный текст выглядит так: {ShowBitArrayInString(input)}" + 
+            logString.Append($"Произведена первоначальная перестановка исходного текста по IP. Перестановленный текст выглядит так: {ShowBitArrayInString(input)}" +
                 Environment.NewLine);
             BitArray L = new BitArray(input.Length / 2); //инициализируем левый блок текста
             BitArray R = new BitArray(input.Length / 2); //инициализируем правый блок текста
@@ -362,25 +356,25 @@ namespace DEAL
             GenerateKeysForDes(input_key);
             for (int i = 15; i > -1; i--) //16 раундов шифрования DES
             {
-                logString.Append( $"Начинается {i + 1}-й раунд дешифрования DES. Блок L имеет вид {ShowBitArrayInString(L)}" + 
-                    Environment.NewLine + $"Блок R имеет вид {ShowBitArrayInString(R)}" + 
+                logString.Append($"Начинается {i + 1}-й раунд дешифрования DES. Блок L имеет вид {ShowBitArrayInString(L)}" +
+                    Environment.NewLine + $"Блок R имеет вид {ShowBitArrayInString(R)}" +
                     Environment.NewLine);
                 oldR = Copy(R);//запоминаем старый блок R
                 R = Copy(L);//Новый R - это старый L
                 L = oldR.Xor(FeistelFunction(L, DESkeys[i])); //Новый L - результат XOR старого L на функцию Фейстеля
-                logString.Append( $"Произведена замена правого блока на левый. Блок R получил значения L и теперь имеет вид {ShowBitArrayInString(L)}" + 
-                    Environment.NewLine + $"Блок L получил результат операции XOR на предыдущий массив значений блока R {ShowBitArrayInString(R)}" + 
+                logString.Append($"Произведена замена правого блока на левый. Блок R получил значения L и теперь имеет вид {ShowBitArrayInString(L)}" +
+                    Environment.NewLine + $"Блок L получил результат операции XOR на предыдущий массив значений блока R {ShowBitArrayInString(R)}" +
                     Environment.NewLine);
             }
             string resultL, resultR, result; //создаем строки, хранящие финальное содержимое работы функций
             resultL = ShowBitArrayInString(L);
             resultR = ShowBitArrayInString(R);
             result = resultL + resultR;
-            logString.Append( $"Конечные блоки шифрования L и R имеют вид:" +
-                Environment.NewLine + $"L = {resultL}" + 
-                Environment.NewLine + $"R = {resultR}" + 
-                Environment.NewLine + $"Соединяем левый блок с правым и получаем результирующий блок: {result}" + 
-                Environment.NewLine + "Начинается конечная перестановка IP^-1" + 
+            logString.Append($"Конечные блоки шифрования L и R имеют вид:" +
+                Environment.NewLine + $"L = {resultL}" +
+                Environment.NewLine + $"R = {resultR}" +
+                Environment.NewLine + $"Соединяем левый блок с правым и получаем результирующий блок: {result}" +
+                Environment.NewLine + "Начинается конечная перестановка IP^-1" +
                 Environment.NewLine);
             return reverseIP(ShowStringInBitArray(result));
         }
@@ -392,13 +386,13 @@ namespace DEAL
         private BitArray FeistelFunction(BitArray input, BitArray key)
         {
             BitArray expandedInput = new BitArray(48); //создаем новый битовый массив, который будет содержать в себе расширенный вектор R
-            for (int i=0;i<expandedInput.Length;i++)
-                expandedInput[i] = input[Eplacements[i]-1]; //переставляем биты по таблице функции расширения E. -1 т.к. массив начинается с 0, а значения битов с 1
-            logString.Append( $"Входящий блок R со значениями {ShowBitArrayInString(input)} был расширен и теперь имеет вид {ShowBitArrayInString(expandedInput)}" + 
+            for (int i = 0; i < expandedInput.Length; i++)
+                expandedInput[i] = input[Eplacements[i] - 1]; //переставляем биты по таблице функции расширения E. -1 т.к. массив начинается с 0, а значения битов с 1
+            logString.Append($"Входящий блок R со значениями {ShowBitArrayInString(input)} был расширен и теперь имеет вид {ShowBitArrayInString(expandedInput)}" +
                 Environment.NewLine);
             expandedInput.Xor(key);
-            logString.Append( $"Была выполнения операция XOR с ключом {ShowBitArrayInString(key)}" + 
-                Environment.NewLine + $"Результат операции XOR: {ShowBitArrayInString(expandedInput)}" + 
+            logString.Append($"Была выполнения операция XOR с ключом {ShowBitArrayInString(key)}" +
+                Environment.NewLine + $"Результат операции XOR: {ShowBitArrayInString(expandedInput)}" +
                 Environment.NewLine);
             BitArray[] Bblocks = new BitArray[8];//инициализируем массив из 8 блоков B по 6 бит каждый
             BitArray[] B4bitblocks = new BitArray[8];//инициализируем массив из 8 блоков B' по 4 бита каждый
@@ -407,58 +401,58 @@ namespace DEAL
             StringBuilder b = new StringBuilder();
             int A, B;
             string B4bitblock; //строка, хранящая текущий 4 битный блок B'
-            for (int i = 0; i < expandedInput.Length;i+=6)
+            for (int i = 0; i < expandedInput.Length; i += 6)
             {
                 Bblocks[currentBlock] = new BitArray(6); //каждый блок B инициализируем по 6 бит
                 for (int j = 0; j < 6; j++) //от 1 до 7 для верного умножения
                 {
                     Bblocks[currentBlock][j] = expandedInput[i + j]; //во временную строковую переменную вставляем 
                 }
-                logString.Append( $"Блок B{currentBlock + 1} имеет вид: {ShowBitArrayInString(Bblocks[currentBlock])}" + 
+                logString.Append($"Блок B{currentBlock + 1} имеет вид: {ShowBitArrayInString(Bblocks[currentBlock])}" +
                     Environment.NewLine);
                 a.Append(Convert.ToInt32(Bblocks[currentBlock][0]));//добавляем в число A битовое значение 1 бита блока
                 a.Append(Convert.ToInt32(Bblocks[currentBlock][5]));//добавляем в число A битовое значение последнего бита блока
                 for (int j = 1; j < 5; j++)
                     b.Append(Convert.ToInt32(Bblocks[currentBlock][j])); //добавляем в число B битовые значение 4 разрядов
-                logString.Append( $"Число a блока B{currentBlock+1} имеет двоичный вид : {a}" + 
-                    Environment.NewLine + $"Число b блока B{currentBlock+1} имеет двоичный вид: {b}" + 
+                logString.Append($"Число a блока B{currentBlock + 1} имеет двоичный вид : {a}" +
+                    Environment.NewLine + $"Число b блока B{currentBlock + 1} имеет двоичный вид: {b}" +
                     Environment.NewLine);
                 A = Convert.ToInt32(a.ToString(), 2); //получаем десятичное представление чисел A и B
                 B = Convert.ToInt32(b.ToString(), 2);
-                logString.Append( $"Число a блока B{currentBlock+1} имеет десятичный вид : {A}" + 
-                    Environment.NewLine + $"Число b блока B{currentBlock} имеет десятичный вид: {B}" + 
+                logString.Append($"Число a блока B{currentBlock + 1} имеет десятичный вид : {A}" +
+                    Environment.NewLine + $"Число b блока B{currentBlock} имеет десятичный вид: {B}" +
                     Environment.NewLine);
-                logString.Append( $"Этот элемент в таблице S{currentBlock+1} имеет число {Splacements[currentBlock, A,B]}" + 
+                logString.Append($"Этот элемент в таблице S{currentBlock + 1} имеет число {Splacements[currentBlock, A, B]}" +
                     Environment.NewLine);
-                B4bitblock = Convert.ToString(Splacements[currentBlock, A ,B], 2);
-                if (B4bitblock.Length<4) //если двоичный вид числа оказался меньше 4 бит, то нужно добавить незначащие нули
+                B4bitblock = Convert.ToString(Splacements[currentBlock, A, B], 2);
+                if (B4bitblock.Length < 4) //если двоичный вид числа оказался меньше 4 бит, то нужно добавить незначащие нули
                 {
                     StringBuilder sb = new StringBuilder();
-                    while(sb.Length!= 4 - B4bitblock.Length)//дополняем нулями в начале
+                    while (sb.Length != 4 - B4bitblock.Length)//дополняем нулями в начале
                         sb.Append('0');
                     sb.Append(B4bitblock); //добавляем старые значения
-                    B4bitblock= sb.ToString(); //получаем строку 4 бит
+                    B4bitblock = sb.ToString(); //получаем строку 4 бит
                 }
                 B4bitblocks[currentBlock] = ShowStringInBitArray(B4bitblock); //преобразовываем строку в массив битов
-                logString.Append( $"Преобразовываем число {Splacements[currentBlock, A, B]} в двоичный вид. Блок B'{currentBlock} имеет вид: {B4bitblock}" + 
+                logString.Append($"Преобразовываем число {Splacements[currentBlock, A, B]} в двоичный вид. Блок B'{currentBlock} имеет вид: {B4bitblock}" +
                     Environment.NewLine);
                 currentBlock++; //увеличиваем номер блока
                 a.Clear();
                 b.Clear();
             }
             StringBuilder B1B8 = new StringBuilder(32); //Инициализируем 32 битный блок, сочетающий в себе все блоки B'
-            for (int i=0;i<8;i++)
+            for (int i = 0; i < 8; i++)
             {
                 B1B8.Append(ShowBitArrayInString(B4bitblocks[i]));
             }
-            logString.Append( $"32-битный блок B'1-B'8 имеет вид: {B1B8}");
+            logString.Append($"32-битный блок B'1-B'8 имеет вид: {B1B8}");
             BitArray output = new BitArray(32);//инициализируем итоговый массив с результатом. Результатом является перестановленные элементы блока B'1-B'8
             BitArray temp = ShowStringInBitArray(B1B8.ToString()); //создаем временный битовый массив, содержащий значения блока B'1-B'8
-            for (int i=0;i<32;i++)
+            for (int i = 0; i < 32; i++)
             {
-                output[i] = temp[Pplacements[i]-1];
+                output[i] = temp[Pplacements[i] - 1];
             }
-            logString.Append( $"Выходной блок из функции Фейстеля (блоки B'1-B'8 со смещениями P): {ShowBitArrayInString(output)}" +
+            logString.Append($"Выходной блок из функции Фейстеля (блоки B'1-B'8 со смещениями P): {ShowBitArrayInString(output)}" +
                 Environment.NewLine);
             return output;
         }
@@ -468,18 +462,18 @@ namespace DEAL
         /// <param name="input_key">56-битный или 64-битный ключ (обязательно)</param>
         public void GenerateKeysForDes(BitArray input_key)
         {
-            StringBuilder key=new StringBuilder();
+            StringBuilder key = new StringBuilder();
             int trueCount = 0; //переменная, хранящая информацию о количестве единиц
-            for (int i=1;i<input_key.Length+1;i++) //получаем блок из 7 бит 8 раз
-            { 
-                if (input_key[i-1]==false)
+            for (int i = 1; i < input_key.Length + 1; i++) //получаем блок из 7 бит 8 раз
+            {
+                if (input_key[i - 1] == false)
                     key.Append('0');//присваиваем значение в итоговый 64-битный ключ
-                if (input_key[i-1] == true)
+                if (input_key[i - 1] == true)
                 {
                     key.Append('1');
                     trueCount++;
-                } 
-                if (i % 7 == 0 && input_key.Length!=64)//если уже достигнут 7 символ, то добавляем проверочный бит (только для ключа 56 бит!!!)
+                }
+                if (i % 7 == 0 && input_key.Length != 64)//если уже достигнут 7 символ, то добавляем проверочный бит (только для ключа 56 бит!!!)
                 {
                     if (trueCount % 2 == 0) //если количество единиц четное
                         key.Append('1'); //то делаем так, чтобы они стали нечетными, добавляя в блок дополнительную единицу
@@ -488,45 +482,43 @@ namespace DEAL
                     trueCount = 0;//обнуляем счетчик
                 }
             }
-            //if (input_key.Length!=64)
-            logString.Append( $"Получен 56 битный ключ. Он был расширен до 64 бит. Теперь ключ имеет вид {key}" +
-                Environment.NewLine);
+
             StringBuilder C, D; //создаем временные блоки в виде строк
             C = new StringBuilder();
             D = new StringBuilder();
-            for (int i = 0;i < CDPlacements.Length; i++)
+            for (int i = 0; i < CDPlacements.Length; i++)
             {
                 if (i < 28) //если i еще в первой половине, то помещаем в блок C0 символ из расширенного ключа
                 {
-                    C.Append(key[CDPlacements[i]-1]); //ВАЖНО! Вычитается единица, поскольку значения в CDPlacements начинаются с 1, а массив - с нуля
+                    C.Append(key[CDPlacements[i] - 1]); //ВАЖНО! Вычитается единица, поскольку значения в CDPlacements начинаются с 1, а массив - с нуля
                 }
                 else //иначе помещаем в блок D0 символ
-                    D.Append(key[CDPlacements[i]-1]);
+                    D.Append(key[CDPlacements[i] - 1]);
             }
-            logString.Append( $"Были созданы блоки C0 D0 с перестановленным содержимым. Содержимое блока C0: {C}" + 
+            logString.Append($"Были созданы блоки C0 D0 с перестановленным содержимым. Содержимое блока C0: {C}" +
                 Environment.NewLine + $"Содержимое блока D0: {D}" +
                 Environment.NewLine);
             string C0D0 = C.ToString() + D;
-            logString.Append( $"Нулевой вектор C0D0 имеет вид: {C0D0}"+
+            logString.Append($"Нулевой вектор C0D0 имеет вид: {C0D0}" +
                 Environment.NewLine);
             BitArray[] vectorsForkeys = new BitArray[16];//создаем битовый массив, хранящий вектора CD
-            string[,] blocks=new string[16,2]; //создаем двумерный строковый массив - хранилище блоков
+            string[,] blocks = new string[16, 2]; //создаем двумерный строковый массив - хранилище блоков
             string[] vectors = new string[16];//создаем строковый массив векторов
             BitArray tempC, tempD; //создаем временные массивы битов
-            for (int i=0;i<16;i++) //генерируем векторы CD
+            for (int i = 0; i < 16; i++) //генерируем векторы CD
             {
                 vectorsForkeys[i] = new BitArray(56); //инициализируем вектор
                 if (i == 0) //если это самый первый элемент, то берем блоки C0D0
                 {
                     tempC = ShowStringInBitArray(C.ToString());
                     tempD = ShowStringInBitArray(D.ToString());
-                }   
+                }
                 else //иначе берем предыдущий вектор
                 {
                     tempC = ShowStringInBitArray(blocks[i - 1, 0]);
                     tempD = ShowStringInBitArray(blocks[i - 1, 1]);
                 }
-                if (i==0 || i==1||i==8||i==15) //это итерации, в которых происходит всего 1 сдвиг влево
+                if (i == 0 || i == 1 || i == 8 || i == 15) //это итерации, в которых происходит всего 1 сдвиг влево
                 {
                     //сдвигаем у обоих блоков значения
                     this.LeftShift(tempC, 1);
@@ -540,24 +532,24 @@ namespace DEAL
                 }
                 blocks[i, 0] = ShowBitArrayInString(tempC);//заносим в строковый массив блоков значения массива битов
                 blocks[i, 1] = ShowBitArrayInString(tempD);
-                logString.Append( $"Получаем {i+1}-е блоки:" +
-                    Environment.NewLine + $"C{i + 1} = {blocks[i, 0]}" + 
-                    Environment.NewLine + $"D{i + 1} = {blocks[i, 1]}" + 
+                logString.Append($"Получаем {i + 1}-е блоки:" +
+                    Environment.NewLine + $"C{i + 1} = {blocks[i, 0]}" +
+                    Environment.NewLine + $"D{i + 1} = {blocks[i, 1]}" +
                     Environment.NewLine);
                 vectors[i] = blocks[i, 0] + blocks[i, 1]; //для отображения данных
-                logString.Append( $"{i + 1}-й вектор имеет вид: {vectors[i]}" + 
+                logString.Append($"{i + 1}-й вектор имеет вид: {vectors[i]}" +
                     Environment.NewLine);
             }
             DESkeys = new BitArray[16]; //инициализируем хранилище ключей
-            for (int i=0;i<16;i++) //создаем 16 ключей DES
+            for (int i = 0; i < 16; i++) //создаем 16 ключей DES
             {
                 key.Clear();
-                for (int j=0;j<KeyPlacements.Length;j++) //В цикле размещаем в первый ключ значения из первого вектора, и делаем перестановку
+                for (int j = 0; j < KeyPlacements.Length; j++) //В цикле размещаем в первый ключ значения из первого вектора, и делаем перестановку
                 {
-                    key.Append(vectors[i][KeyPlacements[j]-1]);//ВАЖНО! Вычитается единица, поскольку значения в CDPlacements начинаются с 1, а массив - с нуля
+                    key.Append(vectors[i][KeyPlacements[j] - 1]);//ВАЖНО! Вычитается единица, поскольку значения в CDPlacements начинаются с 1, а массив - с нуля
                 }
                 DESkeys[i] = ShowStringInBitArray(key.ToString()); //преобразовываем ключ из строк в набор нулей и единиц
-                logString.Append( $"{i + 1}-й ключ имеет вид: {ShowBitArrayInString(DESkeys[i])}" + 
+                logString.Append($"{i + 1}-й ключ имеет вид: {ShowBitArrayInString(DESkeys[i])}" +
                     Environment.NewLine);
             }
         }
@@ -580,8 +572,8 @@ namespace DEAL
         }
         private BitArray ShowStringInBitArray(string input)
         {
-            BitArray bits=new BitArray(input.Length);
-            for (int i=0;i<input.Length;i++)
+            BitArray bits = new BitArray(input.Length);
+            for (int i = 0; i < input.Length; i++)
             {
                 if (input[i] == '1')
                     bits.Set(i, true);
@@ -595,11 +587,11 @@ namespace DEAL
         /// </summary>
         /// <param name="input">Входной массив, в который будет записан результат</param>
         /// <param name="count">Количество сдвигов влево</param>
-        private void LeftShift(BitArray input,int count)
+        private void LeftShift(BitArray input, int count)
         {
             //Неприятная особенность встроенного метода LeftShift в BitArray - он не помещает в конец значение сдвинутого бита. Этот метод исправляет это
             bool first_bool;
-            for (int i=0;i<count;i++)
+            for (int i = 0; i < count; i++)
             {
                 first_bool = input[0];
                 for (int j = 1; j < input.Count; j++)
@@ -618,11 +610,11 @@ namespace DEAL
         private BitArray Copy(BitArray input)
         {
             BitArray output = new BitArray(input.Length);
-            for (int i=0;i<input.Length;i++) 
+            for (int i = 0; i < input.Length; i++)
                 output[i] = input[i];
             return output;
         }
 
     }
-    
+
 }

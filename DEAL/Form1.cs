@@ -1,6 +1,5 @@
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Collections;
+using System.Text;
 
 namespace DEAL
 {
@@ -20,15 +19,17 @@ namespace DEAL
             textBoxOutput.Text = "";
 
             GetKeysFromForm();
+            if (DESKey == null || DEALKey == null)
+                return;
 
             deal.DEALGenerateKeys(DEALKey, DESKey); //generate round keys (RK) DEAL from user's DES and DEAL keys
-
+            
             string inputText = textBoxInput.Text;
             while (inputText.Length % 8 != 0)
                 inputText += " ";
 
             BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText));
-            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText); 
+            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText);
             byte[] result = new byte[resultInBin.GetLength(0) * 16];//16 - symbol size in UTF-16
             for (int i = 0; i < resultInBin.GetLength(0); i++)
                 resultInBin[i].CopyTo(result, i * 16);
@@ -41,13 +42,14 @@ namespace DEAL
             textBoxOutput.Text = "";
 
             GetKeysFromForm();
-
+            if (DESKey == null || DEALKey == null)
+                return;
             deal.DEALGenerateKeys(DEALKey, DESKey);//генерация раундовых ключей
 
             string inputText = textBoxInput.Text;
             while (inputText.Length % 8 != 0)
                 inputText += " ";
-            
+
             BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText));
             BitArray[] resultInBin = deal.DEALEncrypt(inputBinaryText);
             byte[] result = new byte[resultInBin.GetLength(0) * 16]; //16 - symbol size in UTF-16
