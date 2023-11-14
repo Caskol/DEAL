@@ -6,7 +6,9 @@ namespace DEAL
 {
     public partial class Form1 : Form
     {
-        DEAL deal = new DEAL();
+        BitArray DESKey;
+        BitArray DEALKey;
+
         public Form1()
         {
             InitializeComponent();
@@ -14,127 +16,87 @@ namespace DEAL
 
         private void buttonDecrypt_Click(object sender, EventArgs e)
         {
+            DEAL deal = new DEAL();
             textBoxOutput.Text = "";
-            //Считываем ключ для DES, который сгенерирует ключи DEAL
-            string key = textBoxKeyDES.Text;
-            string temp;
-            while (key.Length * 8 < 56)
-                key += " ";
-            byte[] bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            BitArray bt = new BitArray(bytes);
-            if (bt.Length != 56)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DES должен обязательно состоять из 7 символов алфавита ASCII");
-                return;
-            }
 
-            //Считываем ключ для DEAL
-            BitArray DEALKey;
-            key = textBoxKeyDEAL1.Text;
-            while (key.Length * 8 < 128)
-                key += " ";
-            bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            DEALKey = new BitArray(bytes);
-            if (DEALKey.Length != 128)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DEAL должен обязательно состоять из 16 символов алфавита ASCII");
-                return;
-            }
-            deal.DEALGenerateKeys(DEALKey,bt); //генерируем раундовые ключи DEAL из ключа DES и DEAL
+            GetKeysFromForm();
 
-
-            string inputText = textBoxInput.Text;
-            while (inputText.Length%8!=0)
-            {
-                inputText += " ";
-            }
-            bytes=Encoding.Unicode.GetBytes(inputText); //получаем байты текста
-            BitArray inputBinaryText = new BitArray(bytes);
-            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText); //получаем дешифрованный текст
-            byte[] result = new byte[resultInBin.GetLength(0) * 16];    
-            for (int i=0;i<resultInBin.GetLength(0);i++)
-            {
-                resultInBin[i].CopyTo(result, i * 16);
-            }
-            string output = Encoding.Unicode.GetString(result);
-            textBoxOutput.Text = output;
-        }
-
-        private void buttonGenerateKeys_Click(object sender, EventArgs e)
-        {
-            textBoxOutput.Text = "";
-            //Считываем ключ для DES, который сгенерирует ключи DEAL
-            string key = textBoxKeyDES.Text;
-            while (key.Length * 8 < 56) //Расширяем ключи до нужного размера
-                key += " ";
-            byte[] bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            BitArray bt = new BitArray(bytes);
-            if (bt.Length!=56)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DES должен обязательно состоять из 7 символов алфавита ASCII");
-                return;
-            }
-
-            //Считываем ключ для DEAL
-            BitArray DEALKey;
-            key = textBoxKeyDEAL1.Text;
-            while (key.Length * 8 < 128)
-                key += " ";
-            bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            DEALKey = new BitArray(bytes);
-            if (DEALKey.Length != 128)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DEAL должен обязательно состоять из 16 символов алфавита ASCII");
-                return;
-            }
-            deal.DEALGenerateKeys(DEALKey,bt);
-        }
-
-        private void buttonEncrypt_Click(object sender, EventArgs e)
-        {
-            textBoxOutput.Text = "";
-            //Считываем ключ для DES, который сгенерирует ключи DEAL
-            string key = textBoxKeyDES.Text;
-            string temp;
-            while (key.Length*8 < 56)
-                key += " ";
-            byte[] bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            BitArray bt = new BitArray(bytes);
-            if (bt.Length != 56)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DES должен обязательно состоять максимум из 7 символов алфавита ASCII");
-                return;
-            }
-
-            //Считываем ключ для DEAL
-            BitArray DEALKey;
-            key = textBoxKeyDEAL1.Text;
-            while (key.Length*8 < 128)
-                key += " ";
-            bytes = Encoding.ASCII.GetBytes(key); //получаем байты символов
-            DEALKey = new BitArray(bytes);
-            if (DEALKey.Length != 128)
-            {
-                MessageBox.Show("Введён некорректный ключ. Ключ DEAL должен обязательно состоять максимум из 16 символов алфавита ASCII");
-                return;
-            }
-            deal.DEALGenerateKeys(DEALKey, bt);
-
+            deal.DEALGenerateKeys(DEALKey, DESKey); //генерируем раундовые ключи DEAL из ключа DES и DEAL
 
             string inputText = textBoxInput.Text;
             while (inputText.Length % 8 != 0)
                 inputText += " ";
-            bytes = Encoding.Unicode.GetBytes(inputText); //получаем байты текста
-            BitArray inputBinaryText = new BitArray(bytes);
 
-            BitArray[] resultInBin = deal.DEALEncrypt(inputBinaryText); //получаем дешифрованный текст
-            byte[] result = new byte[resultInBin.GetLength(0)*16];
+            BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText));
+            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText); //получаем дешифрованный текст
+            byte[] result = new byte[resultInBin.GetLength(0) * 16];
             for (int i = 0; i < resultInBin.GetLength(0); i++)
+                resultInBin[i].CopyTo(result, i * 16);
+            textBoxOutput.Text = Encoding.Unicode.GetString(result);
+        }
+
+        private void buttonEncrypt_Click(object sender, EventArgs e)
+        {
+            DEAL deal = new DEAL();
+            textBoxOutput.Text = "";
+
+            GetKeysFromForm();
+
+            deal.DEALGenerateKeys(DEALKey, DESKey);//генерация раундовых ключей
+
+            string inputText = textBoxInput.Text;
+            while (inputText.Length % 8 != 0)
+                inputText += " ";
+            
+            BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText)); //получаем байты текста
+            BitArray[] resultInBin = deal.DEALEncrypt(inputBinaryText); //получаем дешифрованный текст
+            byte[] result = new byte[resultInBin.GetLength(0) * 16]; //почему 16? потому что UTF-16 имеет размер символа 16 бит
+            for (int i = 0; i < resultInBin.GetLength(0); i++)
+                resultInBin[i].CopyTo(result, i * 16);
+            textBoxOutput.Text = Encoding.Unicode.GetString(result);
+        }
+        private void GetKeysFromForm()
+        {
+            //Ключи считываются в формате ASCII из-за того, что символ ASCII равен 1 байту, а размер блока для шифров должен не превышать 56/128 бит.
+            //Иначе при использовании символов UTF-16 можно было бы вставить гораздо меньше символов
+            //Считываем ключ для DES, который сгенерирует ключи DEAL
+            string key = textBoxKeyDES.Text;
+            if (key.Length > 7)
             {
-                resultInBin[i].CopyTo(result, i*16);
+                MessageBox.Show("Введен недопустимый ключ DES", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            string output = Encoding.Unicode.GetString(result);
-            textBoxOutput.Text = output;
+            if (key.Length < 7)
+            {
+                DialogResult dr = MessageBox.Show("Введён некорректный ключ. Ключ DES должен состоять максимум из 7 символов алфавита ASCII" +
+                    Environment.NewLine + "Хотите дополнить этот ключ пробелами в конце?", "Произошла ошибка", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                if (dr == DialogResult.Yes)
+                    while (key.Length < 7)
+                        key += " ";
+                else
+                    return;
+            }
+            DESKey = new BitArray(Encoding.ASCII.GetBytes(key));
+
+
+            //Считываем ключ для DEAL
+            key = textBoxKeyDEAL.Text;
+            if (key.Length > 16)
+            {
+                MessageBox.Show("Введен недопустимый ключ DEAL", "Произошла ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            if (key.Length < 16)
+            {
+                DialogResult dr = MessageBox.Show("Введён некорректный ключ. Ключ DEAL должен состоять максимум из 16 символов алфавита ASCII" +
+                    Environment.NewLine + "Хотите дополнить этот ключ пробелами в конце?", "Произошла ошибка", MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                if (dr == DialogResult.Yes)
+                    while (key.Length < 16)
+                        key += " ";
+                else
+                    return;
+            }
+            DEALKey = new BitArray(Encoding.ASCII.GetBytes(key));
         }
     }
 }
