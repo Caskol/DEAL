@@ -21,15 +21,15 @@ namespace DEAL
 
             GetKeysFromForm();
 
-            deal.DEALGenerateKeys(DEALKey, DESKey); //генерируем раундовые ключи DEAL из ключа DES и DEAL
+            deal.DEALGenerateKeys(DEALKey, DESKey); //generate round keys (RK) DEAL from user's DES and DEAL keys
 
             string inputText = textBoxInput.Text;
             while (inputText.Length % 8 != 0)
                 inputText += " ";
 
             BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText));
-            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText); //получаем дешифрованный текст
-            byte[] result = new byte[resultInBin.GetLength(0) * 16];
+            BitArray[] resultInBin = deal.DEALDecrypt(inputBinaryText); 
+            byte[] result = new byte[resultInBin.GetLength(0) * 16];//16 - symbol size in UTF-16
             for (int i = 0; i < resultInBin.GetLength(0); i++)
                 resultInBin[i].CopyTo(result, i * 16);
             textBoxOutput.Text = Encoding.Unicode.GetString(result);
@@ -48,18 +48,17 @@ namespace DEAL
             while (inputText.Length % 8 != 0)
                 inputText += " ";
             
-            BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText)); //получаем байты текста
-            BitArray[] resultInBin = deal.DEALEncrypt(inputBinaryText); //получаем дешифрованный текст
-            byte[] result = new byte[resultInBin.GetLength(0) * 16]; //почему 16? потому что UTF-16 имеет размер символа 16 бит
+            BitArray inputBinaryText = new BitArray(Encoding.Unicode.GetBytes(inputText));
+            BitArray[] resultInBin = deal.DEALEncrypt(inputBinaryText);
+            byte[] result = new byte[resultInBin.GetLength(0) * 16]; //16 - symbol size in UTF-16
             for (int i = 0; i < resultInBin.GetLength(0); i++)
                 resultInBin[i].CopyTo(result, i * 16);
             textBoxOutput.Text = Encoding.Unicode.GetString(result);
         }
         private void GetKeysFromForm()
         {
-            //Ключи считываются в формате ASCII из-за того, что символ ASCII равен 1 байту, а размер блока для шифров должен не превышать 56/128 бит.
-            //Иначе при использовании символов UTF-16 можно было бы вставить гораздо меньше символов
-            //Считываем ключ для DES, который сгенерирует ключи DEAL
+            //ASCII symbol equals 1 byte. Block size in DES and DEAL cannot be bigger than 56/128 bits. 
+            //So if there was a UTF-16 symbol (which equals 16 bytes) then block cannot be bigger than 3-5 UTF-16 symbols, which isn't good for cipher secure
             string key = textBoxKeyDES.Text;
             if (key.Length > 7)
             {
@@ -79,7 +78,6 @@ namespace DEAL
             DESKey = new BitArray(Encoding.ASCII.GetBytes(key));
 
 
-            //Считываем ключ для DEAL
             key = textBoxKeyDEAL.Text;
             if (key.Length > 16)
             {
